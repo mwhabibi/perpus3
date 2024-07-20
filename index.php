@@ -15,18 +15,11 @@ include("koneksi.php");
 
 <body>
     <div class="container">
-        <div class="row">
-            <h1 class="fw-bold">DATA BUKU</h1>
-            <div class="col-md-12 text-right mt-3">
-                <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modal-input" onclick="ResetInput()">Tambah</button>
-            </div>
-
-            <!-- tabel buku -->
-            <div class="col-md-12 mt-3">
-                <p>
-                    Buku paling sering di Pinjam:
-                    <?php
-                    $sql = "
+        <div class="col-md-12 mt-3">
+            <p>
+                Buku paling sering di Pinjam:
+                <?php
+                $sql = "
                         SELECT b.id, b.judul, b.kategori, b.qty, COUNT(p.idBuku) AS jumlah_peminjaman
                         FROM buku b
                         JOIN pinjam p ON b.id = p.idBuku
@@ -34,18 +27,54 @@ include("koneksi.php");
                         ORDER BY jumlah_peminjaman DESC
                         LIMIT 1;
                         ";
-                    $query = mysqli_query($db, $sql);
+                $query = mysqli_query($db, $sql);
 
-                    while ($favBook = mysqli_fetch_array($query)) {
-                        echo "
+                while ($favBook = mysqli_fetch_array($query)) {
+                    echo "
                             <b>
                                 " . $favBook['judul'] . "
                             </b>
                             ";
-                    }
-                    ?>
-                </p>
+                }
+                ?>
+            </p>
+            <p>
+                Pengunjung paling aktif adalah :
+                <?php
+                $sql = "
+                    SELECT 
+    p.idPengunjung, 
+    p.nama, 
+    COUNT(pm.idPinjam) AS jumlah_pinjam
+FROM 
+    pinjam pm
+JOIN 
+    pengunjung p ON pm.idPengunjung = p.idPengunjung
+GROUP BY 
+    p.idPengunjung, p.nama
+ORDER BY 
+    jumlah_pinjam DESC
+LIMIT 1;
 
+                    ";
+                $query = mysqli_query($db, $sql);
+
+                while ($bestPengunjung = mysqli_fetch_array($query)) {
+                    echo "
+                            <b>
+                                " . $bestPengunjung['nama'] . "
+                            </b>
+                            ";
+                }
+                ?>
+            </p>
+        </div>
+        <div class="row">
+            <div class="col-md-12 mt-3">
+                <h1 class="fw-bold">DATA BUKU</h1>
+                <div class="col-md-12 text-right mt-3 mb-3">
+                    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modal-input" onclick="ResetInput()">Tambah Buku</button>
+                </div>
                 <table class="table table-striped table-bordered">
                     <thead>
                         <tr>
@@ -60,16 +89,15 @@ include("koneksi.php");
                         <?php
                         $sql = "SELECT * FROM buku";
                         $query = mysqli_query($db, $sql);
-                        $no = 1;
                         while ($data = mysqli_fetch_array($query)) {
                             echo "<tr>
-								<td>" . $no++ . "</td>
+								<td>" . $data['id'] . "</td>
 								<td>" . $data['judul'] . "</td>
 								<td>" . $data['kategori'] . "</td>
 								<td>" . $data['qty'] . "</td>
 								<td>
 									<button type='button' class='btn btn-primary btn-sm' data-toggle='modal' data-target='#modal-input' onclick='SetInput(" . json_encode($data) . ")' title='Ubah'><i class='fa fa-edit'></i></button> 
-									<button type='button' class='btn btn-danger btn-sm' onclick='SetHapus(" . json_encode($data) . ")' title='Hapus'><i class='fa fa-trash'></i></button>
+									<button type='button' class='btn btn-danger btn-sm' data-toggle='modal' data-target='#modal-hapus' onclick='SetHapus(" . json_encode($data) . ")' title='Hapus'><i class='fa fa-trash'></i></button>
 								</td>
 							</tr>";
                         }
@@ -78,20 +106,53 @@ include("koneksi.php");
                     </tbody>
                 </table>
             </div>
-            <!-- Tabel Buku end -->
 
-            <!-- Tabel Peminjam -->
             <div class="col-md-12 mt-3">
-                <h1 class="fw-bold">DATA PEMINJAMAN</h1>
+                <h1 class="fw-bold">DATA PENGUNGJUNG/PEMINJAM</h1>
                 <div class="col-md-12 text-right mt-3 mb-3">
-                    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modal-input-2" onclick="ResetInput()">Tambah</button>
+                    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modalPengunjung" onclick="resetInputPengunjung()">Tambah Pengunjung</button>
                 </div>
                 <table class="table table-striped table-bordered">
                     <thead>
                         <tr>
-                            <th>Tanggal</th>
-                            <th>Id Buku</th>
-                            <th>Peminjam</th>
+                            <th>ID Pengunjung</th>
+                            <th>Nama Pengunjung</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        $sql = "SELECT * FROM pengunjung";
+                        $query = mysqli_query($db, $sql);
+                        $no = 1;
+                        while ($data = mysqli_fetch_array($query)) {
+                            echo "<tr>
+                                        <td>" . $data['idPengunjung'] . "</td>
+                                        <td>" . $data['nama'] . "</td>
+                                        <td>
+                                            <button type='button' class='btn btn-primary btn-sm' data-toggle='modal' data-target='#modalPengunjung' onclick='setInputPengunjung(" . json_encode($data) . ")' title='Ubah'><i class='fa fa-edit'></i></button> 
+                                        </td>
+                                    </tr>";
+                        }
+                        ?>
+
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="col-md-12 mt-3">
+                <h1 class="fw-bold">DATA PEMINJAMAN</h1>
+                <div class="col-md-12 text-right mt-3 mb-3">
+                    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modalPinjam" onclick="resetInputPinjam()">Tambah Peminjaman</button>
+                </div>
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>ID Pinjam</th>
+                            <th>Tanggal Pinjam</th>
+                            <th>ID Buku</th>
+                            <th>ID Pengunjung</th>
+                            <th>Status</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -99,27 +160,29 @@ include("koneksi.php");
                         <?php
                         $sql = "SELECT * FROM pinjam";
                         $query = mysqli_query($db, $sql);
-                        $no = 1;
                         while ($data = mysqli_fetch_array($query)) {
                             echo "<tr>
-                                <td>" . $data['tanggal'] . "</td>
-								<td>" . $data['idBuku'] . "</td>
-								<td>" . $data['peminjam'] . "</td>
-								<td>
-									<button type='button' class='btn btn-primary btn-sm' data-toggle='modal' data-target='#modal-input-2' onclick='SetInput2(" . json_encode($data) . ")' title='Ubah'><i class='fa fa-edit'></i></button> 
-								</td>
-							</tr>";
+        <td>" . $data['idPinjam'] . "</td>
+        <td>" . $data['tanggal'] . "</td>
+        <td>" . $data['idBuku'] . "</td>
+        <td>" . $data['idPengunjung'] . "</td>
+        <td>" . ($data['diPinjam'] == 1 ? 'Pinjam' : 'Kembali') . "</td>
+        <td>
+        " .
+                                ($data['diPinjam'] == 1 ? "<button type='button' class='btn btn-primary btn-sm' data-toggle='modal' data-target='#modalPinjam' onclick='setInputPinjam(" . json_encode($data) . ")' title='Ubah'><i class='fa fa-edit'></i></button> " : '')
+                                . "
+        </td>
+    </tr>";
                         }
                         ?>
 
                     </tbody>
                 </table>
             </div>
-            <!-- Tabel peminjam End -->
         </div>
     </div>
 
-    <!-- Modal Tabel Buku -->
+
     <div class="modal fade" id="modal-input" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -169,14 +232,12 @@ include("koneksi.php");
             </div>
         </div>
     </div>
-    <!-- Modal Tabel buku End -->
 
-    <!-- MOdal Tabel Peminjam -->
-    <div class="modal fade" id="modal-input-2" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal fade" id="modalPinjam" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="title"></h5>
+                    <h5 class="modal-title" id="titleModalPinjam"></h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -184,29 +245,87 @@ include("koneksi.php");
                 <form action="simpan.php" method="post">
                     <div class="modal-body">
                         <div class="row mb-3">
-                            <div class="row mb-3">
-                                <label class="col-md-4 form-label">ID Buku</label>
-                                <div class="col-md-8">
-                                    <input type="text" class="form-control" id="idBuku" name="idBuku" required>
-                                </div>
+                            <label class="col-md-4 form-label">Buku</label>
+                            <div class="col-md-8">
+                                <input type="hidden" class="form-control" id="idPinjam" name="idPinjam" required>
+                                <!-- <input type="text" class="form-control" id="idBuku" name="idBuku" required> -->
+                                <select class="form-control" id="idBuku" name="idBuku" required>
+                                    <?php
+                                    $sql = "SELECT * FROM buku";
+                                    $query = mysqli_query($db, $sql);
+                                    while ($data = mysqli_fetch_array($query)) {
+                                        echo "
+                                            <option value='" . $data['id'] . "'>" . $data['judul'] . "</option>
+                                            ";
+                                    }
+                                    ?>
+                                </select>
                             </div>
-                            <div class="row mb-3">
-                                <label class="col-md-4 form-label">Peminjam</label>
-                                <div class="col-md-8">
-                                    <input type="text" class="form-control" id="peminjam" name="peminjam" required>
-                                </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="col-md-4 form-label">Peminjam</label>
+                            <div class="col-md-8">
+                                <!-- <input type="text" class="form-control" id="peminjam" name="peminjam" required> -->
+                                <select class="form-control" id="idPengunjungPinjam" name="idPengunjung" required>
+                                    <?php
+                                    $sql = "SELECT * FROM pengunjung";
+                                    $query = mysqli_query($db, $sql);
+                                    while ($data = mysqli_fetch_array($query)) {
+                                        echo "
+                                            <option value='" . $data['idPengunjung'] . "'>" . $data['nama'] . "</option>
+                                            ";
+                                    }
+                                    ?>
+                                </select>
                             </div>
-
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
-                            <button type="submit" name="submitPinjam" id="submitPinjam" class="btn btn-primary">Simpan</button>
+                        <div class="row mb-3">
+                            <label class="col-md-4 form-label">Status</label>
+                            <div class="col-md-8">
+                                <!-- <input type="text" class="form-control" id="peminjam" name="peminjam" required> -->
+                                <select class="form-control" name="status" required>
+                                    <option value="1">Di Pinjam</option>
+                                    <option value="0">Di Kembalikan</option>
+                                </select>
+                            </div>
                         </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                        <button type="submit" name="submitPinjam" id="submitPinjam" class="btn btn-primary">Simpan</button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
-    <!-- Modal Tabel Peminjam End -->
+
+    <div class="modal fade" id="modalPengunjung" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="titleModalPengunjung"></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="simpan.php" method="post">
+                    <div class="modal-body">
+                        <div class="row mb-3">
+                            <label class="col-md-4 form-label">Nama Pengunjung</label>
+                            <div class="col-md-8">
+                                <input type="hidden" class="form-control" id="idPengunjung" name="idPengunjung" required>
+                                <input type="text" class="form-control" id="nama" name="nama" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                        <button type="submit" name="submitPengunjung" id="submitPengunjung" class="btn btn-primary">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal Hapus -->
     <div class="modal fade" id="modal-hapus" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -241,6 +360,18 @@ include("koneksi.php");
             $('#qty').val(null);
         }
 
+        function resetInputPinjam() {
+            $('#titleModalPinjam').html('Tambah Peminjaman');
+            $('#idBuku').val(null);
+            $('#idPengunjungPinjam').val(null);
+
+        }
+
+        function resetInputPengunjung() {
+            $('#titleModalPengunjung').html('Tambah Pengunjung');
+            $('#nama').val(null);
+        }
+
         function SetInput(buku) {
             $('#title').html('Ubah Buku');
             $('#id').val(buku['id']);
@@ -252,6 +383,23 @@ include("koneksi.php");
 
         }
 
+        function setInputPinjam(pinjam) {
+            $('#titleModalPinjam').html('Ubah Pinjam');
+            $('#idBuku').val(pinjam['idBuku']);
+            $('#idPinjam').val(pinjam['idPinjam']);
+            $('#idPengunjung').val(pinjam['idPengunjung']);
+
+            document.getElementById("submitPinjam").name = "editPinjam";
+        }
+
+        function setInputPengunjung(pinjam) {
+            $('#titleModalPengunjung').html('Ubah Pengunjung');
+            $('#idPengunjung').val(pinjam['idPengunjung']);
+            $('#nama').val(pinjam['nama']);
+
+            document.getElementById("submitPengunjung").name = "editPengunjung";
+        }
+
         function SetHapus(buku) {
             $('#pesan').html('Apakah anda yakin ingin menghapus Buku ' + buku['judul'] + '?');
             $('#idHapus').val(buku['id']);
@@ -259,14 +407,14 @@ include("koneksi.php");
 
         $('button').tooltip();
 
-        function ShowNotif(notif) {
+        function ShowNotif(notif, status = "success") {
             Swal.fire({
-                title: "Berhasil",
+                title: status == "success" ? "Berhasil" : "Gagal",
                 text: notif,
                 showCancelButton: false,
                 showConfirmButton: false,
                 timer: 5000,
-                icon: "success"
+                icon: status
             });
         }
 
@@ -277,23 +425,7 @@ include("koneksi.php");
         }
         ?>
 
-        // 
-        function ResetInput2() {
-            $('#title').html('Tambah Peminjam');
-            $('#tanggal').val(null);
-            $('#idBuku').val(null);
-            $('#peminjam').val(null);
 
-        }
-
-        function SetInput2(pinjam) {
-            $('#title').html('Ubah Peminjam');
-            // $('#tanggal').val(pinjam['tanggal']);
-            $('#idBuku').val(pinjam['idBuku']);
-            $('#peminjam').val(pinjam['peminjam']);
-
-            document.getElementById("submitPinjam").name = "editPinjam";
-        }
 
         function SetHapus2(pinjam) {
             $('#pesan').html('Apakah anda yakin ingin menghapus Data Peminjaman dari ' + pinjam['peminjam'] + '?');
